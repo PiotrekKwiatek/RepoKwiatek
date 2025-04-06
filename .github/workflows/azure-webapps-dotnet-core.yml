@@ -20,9 +20,8 @@
 name: Build and deploy ASP.Net Core app to an Azure Web App
 
 env:
-  AZURE_WEBAPP_NAME: Microsoft.Web-WebApp-Portal-771ecd21-aad3    # Zmień na nazwę swojej aplikacji w Azure
-  AZURE_WEBAPP_PACKAGE_PATH: 'https://portal.azure.com/#view/HubsExtension/DeploymentDetailsBlade/~/overview/id/%2Fsubscriptions%2F75dbdbb8-b94d-4bd4-9c17-02edbfa3fd06%2FresourceGroups%2Frg-we-meritowebapp-prod-PS%2Fproviders%2FMicrosoft.Resources%2Fdeployments%2FMicrosoft.Web-WebApp-Portal-771ecd21-aad3/packageId/Microsoft.WebSite/packageIconUri/https%3A%2F%2Fcatalogartifact.azureedge.net%2Fpublicartifacts%2FMicrosoft.WebSite-2.6.8%2FIcons%2FMedium.png/primaryResourceId/%2Fsubscriptions%2F75dbdbb8-b94d-4bd4-9c17-02edbfa3fd06%2Fresourcegroups%2Frg-we-meritowebapp-prod-PS%2Fproviders%2FMicrosoft.Web%2Fsites%2Fmerito-piotreks/provisioningHash/customize-post-provisioning-steps-webapp-deployment/createBlade~/%7B%22bladeName%22%3A%22AppServiceWebAppCreateV3Blade%22%2C%22extension%22%3A%22WebsitesExtension%22%2C%22telemetryId%22%3A%22d0be46ce-1035-4383-8105-fd573b573a98%22%7D'      # Ścieżka do paczki aplikacji
-  DOTNET_VERSION: '5'                 # Wersja .NET
+  AZURE_WEBAPP_NAME: merito-piotreks  # Zmień na nazwę swojej aplikacji w Azure
+  DOTNET_VERSION: '9.0'                 # Wersja .NET
 
 on:
   push:
@@ -69,6 +68,6 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          package: MeritoWebApp.Tests/bin/Release/
 
 
