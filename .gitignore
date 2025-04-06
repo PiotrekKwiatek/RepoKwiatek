@@ -400,6 +400,3 @@ FodyWeavers.xsd
 *.sln.iml
 
 
-# wyjatek zeby nie ingorowac tego folderu
-!MeritoWebApp.Tests
-
