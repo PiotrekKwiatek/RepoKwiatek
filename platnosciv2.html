@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8" />
-<title>Płatność składki – Santander</title>
+<title>Płatność składki – mBank QR</title>
 <style>
   #qrcode canvas {
     margin-top: 10px;
@@ -12,13 +12,13 @@
 </head>
 <body>
 
-<h1>Opłać składkę</h1>
+<h1>Opłać składkę – mBank QR</h1>
 
 <label>Cel wpłaty:
 <select id="cel">
-  <option value="Skladka%20Maj%202025|50.00">Składka maj 2025 – 50 zł</option>
-  <option value="Biwak%20wiosenny|120.00">Biwak wiosenny – 120 zł</option>
-  <option value="Oboz%20letni|950.00">Obóz letni – 950 zł</option>
+  <option value="Składka maj 2025|50.00">Składka maj 2025 – 50 zł</option>
+  <option value="Biwak wiosenny|120.00">Biwak wiosenny – 120 zł</option>
+  <option value="Obóz letni|950.00">Obóz letni – 950 zł</option>
 </select>
 </label>
 <br><br>
@@ -28,38 +28,40 @@
 </label>
 <br><br>
 
-<button onclick="generuj()">Generuj link i QR kod</button>
-
-<p>Link do płatności:</p>
-<a href="#" id="link" target="_blank" rel="noopener noreferrer"></a>
+<button onclick="generujQR()">Generuj QR kod przelewu</button>
 
 <div id="qrcode"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-
 <script>
-function generuj() {
+function generujQR() {
   const celSelect = document.getElementById("cel");
-  const [tytulRaw, kwotaRaw] = celSelect.value.split("|");
-  let nazwiskoRaw = document.getElementById("nazwisko").value.trim();
+  const [tytul, kwota] = celSelect.value.split("|");
+  const nazwisko = document.getElementById("nazwisko").value.trim();
 
-  if (!nazwiskoRaw) {
+  if (!nazwisko) {
     alert("Proszę wpisać imię i nazwisko.");
     return;
   }
 
-  const tytul = decodeURIComponent(tytulRaw);
-  const nazwisko = nazwiskoRaw;
-  const finalTytul = `${tytul} - ${nazwisko}`;
+  const nrKonta = "PL61109010140000071219812874"; // <-- Twój numer konta IBAN (przykład mBank)
+  const odbiorca = "Twoja Organizacja";
 
-  const nrKonta = "PL63109019260000000514000254";
-  const recipientName = "Twoja Organizacja";
-
-  const link = `https://www.centrum24.pl/app/centrum24/bank/form/transfer?recipientName=${encodeURIComponent(recipientName)}&recipientAccount=${encodeURIComponent(nrKonta)}&amount=${encodeURIComponent(kwotaRaw)}&title=${encodeURIComponent(finalTytul)}`;
-
-  const linkEl = document.getElementById("link");
-  linkEl.href = link;
-  linkEl.textContent = "Kliknij tutaj, aby zapłacić";
+  // Format QR przelewu wg standardu EPC QR (Polski standard)
+  // https://www.paylibo.com/qr-kody-przelewow
+  const qrText =
+    `BCD\n` +
+    `001\n` +
+    `1\n` +
+    `SCT\n` +
+    `${nrKonta}\n` +
+    `${odbiorca}\n` +
+    `\n` +  // adres odbiorcy - puste
+    `${kwota}\n` +
+    `PLN\n` +
+    `${tytul} - ${nazwisko}\n` +
+    `\n` + // info dodatkowe
+    `\n`;  // info dodatkowe
 
   const qrcodeEl = document.getElementById("qrcode");
   qrcodeEl.innerHTML = "";
@@ -67,7 +69,7 @@ function generuj() {
   const canvas = document.createElement("canvas");
   qrcodeEl.appendChild(canvas);
 
-  QRCode.toCanvas(canvas, link, { width: 200 }, function (error) {
+  QRCode.toCanvas(canvas, qrText, { width: 250 }, function (error) {
     if (error) {
       alert("Błąd generowania QR kodu: " + error);
       console.error(error);
