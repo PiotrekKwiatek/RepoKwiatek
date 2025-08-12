@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<title>Formularz płatności wielobankowej z BLIK</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 400px; margin: 20px auto; }
+  label { display: block; margin-top: 15px; }
+  select, input { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
+  button { margin-top: 20px; padding: 10px; width: 100%; font-size: 16px; }
+  #wynik { margin-top: 20px; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+
+<h1>Opłać składkę</h1>
+
+<label>Wybierz bank:
+  <select id="bank">
+    <option value="santander">Santander</option>
+    <option value="mbank">mBank</option>
+    <option value="ing">ING</option>
+    <option value="pko">PKO BP</option>
+    <option value="pekao">Pekao</option>
+    <option value="blik">BLIK (kod lub QR)</option>
+  </select>
+</label>
+
+<label>Cel wpłaty:
+  <select id="cel">
+    <option value="Skladka%20Maj%202025|50.00">Składka maj 2025 – 50 zł</option>
+    <option value="Biwak%20wiosenny|120.00">Biwak wiosenny – 120 zł</option>
+    <option value="Oboz%20letni|950.00">Obóz letni – 950 zł</option>
+  </select>
+</label>
+
+<label>Imię i nazwisko:
+  <input type="text" id="nazwisko" placeholder="Jan Kowalski" />
+</label>
+
+<button onclick="generuj()">Zapłać</button>
+
+<div id="wynik"></div>
+
+<script>
+const konta = {
+  santander: "PL63109019260000000514000254",
+  mbank: "PL61109010140000071219812874",
+  ing: "PL27114020040000300201355387",
+  pko: "PL61109010140000071219812874",
+  pekao: "PL61109010140000071219812874",
+  // numery przykładowe, podmień na swoje
+};
+
+function generuj() {
+  const bank = document.getElementById("bank").value;
+  const [tytulEnc, kwota] = document.getElementById("cel").value.split("|");
+  const nazwiskoRaw = document.getElementById("nazwisko").value.trim();
+
+  if (!nazwiskoRaw) {
+    alert("Proszę wpisać imię i nazwisko.");
+    return;
+  }
+
+  const nazwisko = encodeURIComponent(nazwiskoRaw);
+  const tytul = decodeURIComponent(tytulEnc) + " - " + nazwiskoRaw;
+
+  const nrKonta = konta[bank] || "";
+
+  const wynikEl = document.getElementById("wynik");
+  wynikEl.innerHTML = "";
+
+  if(bank === "blik") {
+    // przykładowy 6-cyfrowy kod BLIK - w realu generowany przez system płatności
+    const blikKod = Math.floor(100000 + Math.random() * 900000);
+    wynikEl.innerHTML = `Kod BLIK do płatności: ${blikKod}\n\nMożesz go wpisać w swojej aplikacji bankowej lub zeskanować poniższy QR kod.`;
+    // do QR możesz podpiąć bibliotekę lub zostawić puste
+  }
+  else if(nrKonta) {
+    // generuj link dla banków które obsługują format paybylink (przykład dla mBank i ING)
+    let link = "";
+
+    if(bank === "mbank" || bank === "ing") {
+      // przykład linku mbank/ing (nieoficjalny, dla demo)
+      link = `https://mbank.pl/transfer?recipient=${nrKonta}&amount=${kwota}&title=${encodeURIComponent(tytul)}`;
+    }
+    else if(bank === "santander") {
+      // Niestety nie ma oficjalnego linku paybylink, więc pokażemy dane do przelewu
+      wynikEl.innerHTML = 
+        `Numer konta: ${nrKonta}\nKwota: ${kwota} zł\nTytuł: ${tytul}\n\n` +
+        `Przejdź do swojego banku Santander, zaloguj się i wykonaj przelew ręcznie.`;
+      return;
+    }
+    else {
+      // Inne banki – pokaż dane do przelewu
+      wynikEl.innerHTML = 
+        `Numer konta: ${nrKonta}\nKwota: ${kwota} zł\nTytuł: ${tytul}\n\n` +
+        `Przejdź do swojego banku, zaloguj się i wykonaj przelew ręcznie.`;
+      return;
+    }
+
+    wynikEl.innerHTML = `<a href="${link}" target="_blank" rel="noopener noreferrer">Kliknij, aby przejść do płatności w ${bank}</a>`;
+  }
+  else {
+    wynikEl.innerHTML = "Nieznany bank lub brak numeru konta.";
+  }
+}
+</script>
+
+</body>
+</html>
