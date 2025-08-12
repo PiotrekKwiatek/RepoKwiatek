@@ -33,29 +33,30 @@
 <div id="wynik"></div>
 <div id="qrcode"></div>
 
+<!-- Załaduj bibliotekę QRCode.js z CDN -->
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
 <script>
 const nrKonta = "PL63109019260000000514000254"; // Podmień na swój IBAN bez spacji
 const nazwaOdbiorcy = "Twoja Organizacja";     // Podmień na swoją nazwę
 
+// Zamiana kropki na przecinek w kwocie (format PL)
 function formatAmount(amount) {
   return amount.replace('.', ',');
 }
 
-// Funkcja tworząca tekst do PSR QR (w formacie ISO 20022, uproszczonym):
+// Tworzymy tekst w standardzie PSR QR (ISO 20022, uproszczony)
 function generatePSR(iban, name, amount, title) {
   amount = formatAmount(amount);
-
-  // Składnia PSR QR (z uproszczeniem, wymagania: https://standardqr.pl/)
-  // Kodowanie polskie znaki zastępujemy najprościej:
-  title = title.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); 
+  // Usuwamy polskie znaki diakrytyczne
+  title = title.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
   return [
     "BCD",
     "001",
     "1",
     "SCT",
-    "Santander Bank Polska", // bank
+    "Santander Bank Polska",
     iban.replace('PL',''),
     name,
     "PL",
@@ -90,7 +91,10 @@ function generuj() {
   const psrText = generatePSR(nrKonta, nazwaOdbiorcy, kwota, tytulPelny);
 
   QRCode.toCanvas(qrcodeEl, psrText, { width: 220 }, function (error) {
-    if (error) console.error(error);
+    if (error) {
+      console.error(error);
+      alert("Błąd podczas generowania QR kodu.");
+    }
   });
 }
 </script>
