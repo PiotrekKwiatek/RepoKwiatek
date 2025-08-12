@@ -2,14 +2,12 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8" />
-<title>Płatność składki z QR kodem (PSR)</title>
+<title>Płatność składki – Santander</title>
 <style>
-  body { font-family: Arial, sans-serif; max-width: 400px; margin: 20px auto; }
-  label { display: block; margin-top: 15px; }
-  select, input { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
-  button { margin-top: 20px; padding: 10px; width: 100%; font-size: 16px; }
-  #wynik { margin-top: 20px; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; white-space: pre-wrap; }
-  #qrcode { margin-top: 20px; text-align: center; }
+  #qrcode canvas {
+    margin-top: 10px;
+    border: 1px solid #000;
+  }
 </style>
 </head>
 <body>
@@ -17,83 +15,66 @@
 <h1>Opłać składkę</h1>
 
 <label>Cel wpłaty:
-  <select id="cel">
-    <option value="Składka maj 2025|50.00">Składka maj 2025 – 50 zł</option>
-    <option value="Biwak wiosenny|120.00">Biwak wiosenny – 120 zł</option>
-    <option value="Obóz letni|950.00">Obóz letni – 950 zł</option>
-  </select>
+<select id="cel">
+  <option value="Skladka%20Maj%202025|50.00">Składka maj 2025 – 50 zł</option>
+  <option value="Biwak%20wiosenny|120.00">Biwak wiosenny – 120 zł</option>
+  <option value="Oboz%20letni|950.00">Obóz letni – 950 zł</option>
+</select>
 </label>
+<br><br>
 
 <label>Imię i nazwisko:
-  <input type="text" id="nazwisko" placeholder="Jan Kowalski" />
+<input type="text" id="nazwisko" placeholder="Jan Kowalski" />
 </label>
+<br><br>
 
-<button onclick="generuj()">Generuj dane i QR kod</button>
+<button onclick="generuj()">Generuj link i QR kod</button>
 
-<div id="wynik"></div>
+<p>Link do płatności:</p>
+<a href="#" id="link" target="_blank" rel="noopener noreferrer"></a>
+
 <div id="qrcode"></div>
 
-<!-- Załaduj bibliotekę QRCode.js z CDN -->
+<!-- biblioteka QRCode.js -->
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <script>
-const nrKonta = "PL63109019260000000514000254"; // Podmień na swój IBAN bez spacji
-const nazwaOdbiorcy = "Twoja Organizacja";     // Podmień na swoją nazwę
-
-// Zamiana kropki na przecinek w kwocie (format PL)
-function formatAmount(amount) {
-  return amount.replace('.', ',');
-}
-
-// Tworzymy tekst w standardzie PSR QR (ISO 20022, uproszczony)
-function generatePSR(iban, name, amount, title) {
-  amount = formatAmount(amount);
-  // Usuwamy polskie znaki diakrytyczne
-  title = title.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-
-  return [
-    "BCD",
-    "001",
-    "1",
-    "SCT",
-    "Santander Bank Polska",
-    iban.replace('PL',''),
-    name,
-    "PL",
-    amount,
-    "",
-    title
-  ].join("\n");
-}
-
 function generuj() {
-  const wynikEl = document.getElementById("wynik");
-  const qrcodeEl = document.getElementById("qrcode");
-  wynikEl.textContent = "";
-  qrcodeEl.innerHTML = "";
+  const celSelect = document.getElementById("cel");
+  const [tytul, kwota] = celSelect.value.split("|");
+  let nazwisko = document.getElementById("nazwisko").value.trim();
 
-  const cel = document.getElementById("cel").value;
-  const [tytul, kwota] = cel.split("|");
-  const nazwiskoRaw = document.getElementById("nazwisko").value.trim();
-
-  if (!nazwiskoRaw) {
+  if (!nazwisko) {
     alert("Proszę wpisać imię i nazwisko.");
     return;
   }
 
-  const tytulPelny = `${tytul} - ${nazwiskoRaw}`;
+  // Zamień spacje na %20 w tytule
+  nazwisko = nazwisko.replace(/ /g, "%20");
+  const finalTytul = `${tytul} - ${nazwisko}`;
 
-  wynikEl.textContent =
-    `Numer konta: ${nrKonta}\n` +
-    `Kwota: ${kwota} zł\n` +
-    `Tytuł przelewu: ${tytulPelny}`;
+  // Twój numer konta w formacie IBAN (bez spacji)
+  const nrKonta = "PL63109019260000000514000254";
 
-  const psrText = generatePSR(nrKonta, nazwaOdbiorcy, kwota, tytulPelny);
+  // Budujemy link do Santander (bankowość internetowa)
+  const link = `https://www.centrum24.pl/app/centrum24/bank/form/transfer?recipientName=Twoja%20Organizacja&recipientAccount=${nrKonta}&amount=${kwota}&title=${finalTytul}`;
 
-  QRCode.toCanvas(qrcodeEl, psrText, { width: 220 }, function (error) {
+  // Ustawiamy link w elemencie <a>
+  const linkEl = document.getElementById("link");
+  linkEl.href = link;
+  linkEl.textContent = "Kliknij tutaj, aby zapłacić";
+
+  // Generujemy QR kod w canvas
+  const qrcodeEl = document.getElementById("qrcode");
+  qrcodeEl.innerHTML = ""; // czyścimy poprzedni QR
+
+  const canvas = document.createElement("canvas");
+  qrcodeEl.appendChild(canvas);
+
+  QRCode.toCanvas(canvas, link, { width: 200 }, function (error) {
     if (error) {
+      alert("Błąd generowania QR kodu: " + error);
       console.error(error);
-      alert("Błąd podczas generowania QR kodu.");
     }
   });
 }
