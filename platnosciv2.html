@@ -2,35 +2,25 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8" />
-<title>Formularz płatności wielobankowej z BLIK</title>
+<title>Płatność składki z QR kodem</title>
 <style>
   body { font-family: Arial, sans-serif; max-width: 400px; margin: 20px auto; }
   label { display: block; margin-top: 15px; }
   select, input { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
   button { margin-top: 20px; padding: 10px; width: 100%; font-size: 16px; }
   #wynik { margin-top: 20px; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; white-space: pre-wrap; }
+  #qrcode { margin-top: 20px; text-align: center; }
 </style>
 </head>
 <body>
 
 <h1>Opłać składkę</h1>
 
-<label>Wybierz bank:
-  <select id="bank">
-    <option value="santander">Santander</option>
-    <option value="mbank">mBank</option>
-    <option value="ing">ING</option>
-    <option value="pko">PKO BP</option>
-    <option value="pekao">Pekao</option>
-    <option value="blik">BLIK (kod lub QR)</option>
-  </select>
-</label>
-
 <label>Cel wpłaty:
   <select id="cel">
-    <option value="Skladka%20Maj%202025|50.00">Składka maj 2025 – 50 zł</option>
-    <option value="Biwak%20wiosenny|120.00">Biwak wiosenny – 120 zł</option>
-    <option value="Oboz%20letni|950.00">Obóz letni – 950 zł</option>
+    <option value="Skladka maj 2025|50.00">Składka maj 2025 – 50 zł</option>
+    <option value="Biwak wiosenny|120.00">Biwak wiosenny – 120 zł</option>
+    <option value="Obóz letni|950.00">Obóz letni – 950 zł</option>
   </select>
 </label>
 
@@ -38,23 +28,25 @@
   <input type="text" id="nazwisko" placeholder="Jan Kowalski" />
 </label>
 
-<button onclick="generuj()">Zapłać</button>
+<button onclick="generuj()">Generuj dane i QR kod</button>
 
 <div id="wynik"></div>
+<div id="qrcode"></div>
+
+<!-- Biblioteka do QR kodów -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <script>
-const konta = {
-  santander: "PL63109019260000000514000254",
-  mbank: "PL61109010140000071219812874",
-  ing: "PL27114020040000300201355387",
-  pko: "PL61109010140000071219812874",
-  pekao: "PL61109010140000071219812874",
-  // numery przykładowe, podmień na swoje
-};
+const nrKonta = "PL63109019260000000514000254"; // Podmień na swój numer konta IBAN bez spacji
 
 function generuj() {
-  const bank = document.getElementById("bank").value;
-  const [tytulEnc, kwota] = document.getElementById("cel").value.split("|");
+  const wynikEl = document.getElementById("wynik");
+  const qrcodeEl = document.getElementById("qrcode");
+  wynikEl.textContent = "";
+  qrcodeEl.innerHTML = "";
+
+  const cel = document.getElementById("cel").value;
+  const [tytul, kwota] = cel.split("|");
   const nazwiskoRaw = document.getElementById("nazwisko").value.trim();
 
   if (!nazwiskoRaw) {
@@ -62,48 +54,38 @@ function generuj() {
     return;
   }
 
-  const nazwisko = encodeURIComponent(nazwiskoRaw);
-  const tytul = decodeURIComponent(tytulEnc) + " - " + nazwiskoRaw;
+  const tytulPelny = `${tytul} - ${nazwiskoRaw}`;
 
-  const nrKonta = konta[bank] || "";
+  // Pokaż dane do przelewu
+  wynikEl.textContent =
+    `Numer konta: ${nrKonta}\n` +
+    `Kwota: ${kwota} zł\n` +
+    `Tytuł przelewu: ${tytulPelny}`;
 
-  const wynikEl = document.getElementById("wynik");
-  wynikEl.innerHTML = "";
+  // Generowanie tekstu QR wg Polskiego Standardu QR (PSR)
+  // Format: https://standardqr.pl/
+  // Przykład uproszczony:
 
-  if(bank === "blik") {
-    // przykładowy 6-cyfrowy kod BLIK - w realu generowany przez system płatności
-    const blikKod = Math.floor(100000 + Math.random() * 900000);
-    wynikEl.innerHTML = `Kod BLIK do płatności: ${blikKod}\n\nMożesz go wpisać w swojej aplikacji bankowej lub zeskanować poniższy QR kod.`;
-    // do QR możesz podpiąć bibliotekę lub zostawić puste
-  }
-  else if(nrKonta) {
-    // generuj link dla banków które obsługują format paybylink (przykład dla mBank i ING)
-    let link = "";
+  const kwotaFormat = parseFloat(kwota).toFixed(2).replace('.', ',');
+  const nazwaOdbiorcy = "Twoja Organizacja"; // podmień na swoją nazwę
 
-    if(bank === "mbank" || bank === "ing") {
-      // przykład linku mbank/ing (nieoficjalny, dla demo)
-      link = `https://mbank.pl/transfer?recipient=${nrKonta}&amount=${kwota}&title=${encodeURIComponent(tytul)}`;
-    }
-    else if(bank === "santander") {
-      // Niestety nie ma oficjalnego linku paybylink, więc pokażemy dane do przelewu
-      wynikEl.innerHTML = 
-        `Numer konta: ${nrKonta}\nKwota: ${kwota} zł\nTytuł: ${tytul}\n\n` +
-        `Przejdź do swojego banku Santander, zaloguj się i wykonaj przelew ręcznie.`;
-      return;
-    }
-    else {
-      // Inne banki – pokaż dane do przelewu
-      wynikEl.innerHTML = 
-        `Numer konta: ${nrKonta}\nKwota: ${kwota} zł\nTytuł: ${tytul}\n\n` +
-        `Przejdź do swojego banku, zaloguj się i wykonaj przelew ręcznie.`;
-      return;
-    }
+  const qrText = 
+`BCD
+001
+1
+SCT
+Santander Bank Polska
+${nrKonta.replace(/PL/, '')}
+${nazwaOdbiorcy}
+PL
+${kwotaFormat}
+${tytulPelny}
+`;
 
-    wynikEl.innerHTML = `<a href="${link}" target="_blank" rel="noopener noreferrer">Kliknij, aby przejść do płatności w ${bank}</a>`;
-  }
-  else {
-    wynikEl.innerHTML = "Nieznany bank lub brak numeru konta.";
-  }
+  // Tworzymy QR kod z powyższym tekstem
+  QRCode.toCanvas(qrcodeEl, qrText, { width: 200 }, function (error) {
+    if (error) console.error(error);
+  });
 }
 </script>
 
