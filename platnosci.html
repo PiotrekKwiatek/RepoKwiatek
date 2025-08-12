@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>Płatność składki – Santander</title>
+</head>
+<body>
+<h1>Opłać składkę</h1>
+
+<label>Cel wpłaty:
+<select id="cel">
+  <option value="Skladka%20Maj%202025|50.00">Składka maj 2025 – 50 zł</option>
+  <option value="Biwak%20wiosenny|120.00">Biwak wiosenny – 120 zł</option>
+  <option value="Oboz%20letni|950.00">Obóz letni – 950 zł</option>
+</select>
+</label>
+<br><br>
+
+<label>Imię i nazwisko:
+<input type="text" id="nazwisko" placeholder="Jan Kowalski">
+</label>
+<br><br>
+
+<button onclick="generujLink()">Zapłać (Santander)</button>
+
+<script>
+function generujLink() {
+  let [tytul, kwota] = document.getElementById("cel").value.split("|");
+  let nazwisko = document.getElementById("nazwisko").value.trim().replace(/ /g, "%20");
+
+  if (!nazwisko) {
+    alert("Proszę wpisać imię i nazwisko.");
+    return;
+  }
+
+  let finalTytul = tytul + "%20-" + nazwisko;
+  let nrKonta = "PL12345678901234567890123456"; // <-- tutaj Twój numer konta
+
+  // Link do Santander – format 'paybylink'
+  let link = `https://www.centrum24.pl/app/centrum24/bank/form/transfer?recipientName=Twoja%20Organizacja&recipientAccount=${nrKonta}&amount=${kwota}&title=${finalTytul}`;
+
+  window.location.href = link;
+}
+</script>
+
+</body>
+</html>
