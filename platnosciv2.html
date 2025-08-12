@@ -35,38 +35,34 @@
 
 <div id="qrcode"></div>
 
-<!-- biblioteka QRCode.js -->
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <script>
 function generuj() {
   const celSelect = document.getElementById("cel");
-  const [tytul, kwota] = celSelect.value.split("|");
-  let nazwisko = document.getElementById("nazwisko").value.trim();
+  const [tytulRaw, kwotaRaw] = celSelect.value.split("|");
+  let nazwiskoRaw = document.getElementById("nazwisko").value.trim();
 
-  if (!nazwisko) {
+  if (!nazwiskoRaw) {
     alert("Proszę wpisać imię i nazwisko.");
     return;
   }
 
-  // Zamień spacje na %20 w tytule
-  nazwisko = nazwisko.replace(/ /g, "%20");
+  const tytul = decodeURIComponent(tytulRaw);
+  const nazwisko = nazwiskoRaw;
   const finalTytul = `${tytul} - ${nazwisko}`;
 
-  // Twój numer konta w formacie IBAN (bez spacji)
   const nrKonta = "PL63109019260000000514000254";
+  const recipientName = "Twoja Organizacja";
 
-  // Budujemy link do Santander (bankowość internetowa)
-  const link = `https://www.centrum24.pl/app/centrum24/bank/form/transfer?recipientName=Twoja%20Organizacja&recipientAccount=${nrKonta}&amount=${kwota}&title=${finalTytul}`;
+  const link = `https://www.centrum24.pl/app/centrum24/bank/form/transfer?recipientName=${encodeURIComponent(recipientName)}&recipientAccount=${encodeURIComponent(nrKonta)}&amount=${encodeURIComponent(kwotaRaw)}&title=${encodeURIComponent(finalTytul)}`;
 
-  // Ustawiamy link w elemencie <a>
   const linkEl = document.getElementById("link");
   linkEl.href = link;
   linkEl.textContent = "Kliknij tutaj, aby zapłacić";
 
-  // Generujemy QR kod w canvas
   const qrcodeEl = document.getElementById("qrcode");
-  qrcodeEl.innerHTML = ""; // czyścimy poprzedni QR
+  qrcodeEl.innerHTML = "";
 
   const canvas = document.createElement("canvas");
   qrcodeEl.appendChild(canvas);
