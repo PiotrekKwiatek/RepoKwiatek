@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8" />
-<title>Płatność składki z QR kodem</title>
+<title>Płatność składki z QR kodem (PSR)</title>
 <style>
   body { font-family: Arial, sans-serif; max-width: 400px; margin: 20px auto; }
   label { display: block; margin-top: 15px; }
@@ -18,7 +18,7 @@
 
 <label>Cel wpłaty:
   <select id="cel">
-    <option value="Skladka maj 2025|50.00">Składka maj 2025 – 50 zł</option>
+    <option value="Składka maj 2025|50.00">Składka maj 2025 – 50 zł</option>
     <option value="Biwak wiosenny|120.00">Biwak wiosenny – 120 zł</option>
     <option value="Obóz letni|950.00">Obóz letni – 950 zł</option>
   </select>
@@ -33,11 +33,37 @@
 <div id="wynik"></div>
 <div id="qrcode"></div>
 
-<!-- Biblioteka do QR kodów -->
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-
 <script>
-const nrKonta = "PL63109019260000000514000254"; // Podmień na swój numer konta IBAN bez spacji
+const nrKonta = "PL63109019260000000514000254"; // Podmień na swój IBAN bez spacji
+const nazwaOdbiorcy = "Twoja Organizacja";     // Podmień na swoją nazwę
+
+function formatAmount(amount) {
+  return amount.replace('.', ',');
+}
+
+// Funkcja tworząca tekst do PSR QR (w formacie ISO 20022, uproszczonym):
+function generatePSR(iban, name, amount, title) {
+  amount = formatAmount(amount);
+
+  // Składnia PSR QR (z uproszczeniem, wymagania: https://standardqr.pl/)
+  // Kodowanie polskie znaki zastępujemy najprościej:
+  title = title.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); 
+
+  return [
+    "BCD",
+    "001",
+    "1",
+    "SCT",
+    "Santander Bank Polska", // bank
+    iban.replace('PL',''),
+    name,
+    "PL",
+    amount,
+    "",
+    title
+  ].join("\n");
+}
 
 function generuj() {
   const wynikEl = document.getElementById("wynik");
@@ -56,34 +82,14 @@ function generuj() {
 
   const tytulPelny = `${tytul} - ${nazwiskoRaw}`;
 
-  // Pokaż dane do przelewu
   wynikEl.textContent =
     `Numer konta: ${nrKonta}\n` +
     `Kwota: ${kwota} zł\n` +
     `Tytuł przelewu: ${tytulPelny}`;
 
-  // Generowanie tekstu QR wg Polskiego Standardu QR (PSR)
-  // Format: https://standardqr.pl/
-  // Przykład uproszczony:
+  const psrText = generatePSR(nrKonta, nazwaOdbiorcy, kwota, tytulPelny);
 
-  const kwotaFormat = parseFloat(kwota).toFixed(2).replace('.', ',');
-  const nazwaOdbiorcy = "Twoja Organizacja"; // podmień na swoją nazwę
-
-  const qrText = 
-`BCD
-001
-1
-SCT
-Santander Bank Polska
-${nrKonta.replace(/PL/, '')}
-${nazwaOdbiorcy}
-PL
-${kwotaFormat}
-${tytulPelny}
-`;
-
-  // Tworzymy QR kod z powyższym tekstem
-  QRCode.toCanvas(qrcodeEl, qrText, { width: 200 }, function (error) {
+  QRCode.toCanvas(qrcodeEl, psrText, { width: 220 }, function (error) {
     if (error) console.error(error);
   });
 }
